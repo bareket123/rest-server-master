@@ -1,37 +1,51 @@
 package com.dev.objects;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 public class User {
-    private String firstName;
-    private String lastName;
-    private boolean active;
+    private String username;
+    private String token;
+    private Date creationDate;
+    private List<String> notes;
 
-    public User(String firstName, String lastName, boolean active) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.active = active;
+    public User(String username, String token) {
+        this.username = username;
+        this.token = token;
+        this.creationDate = new Date();
+        this.notes = new ArrayList<>();
     }
 
-    public String getFirstName() {
-        return firstName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
-    public String getLastName() {
-        return lastName;
+    public String getToken() {
+        return token;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setToken(String token) {
+        this.token = token;
     }
 
-    public boolean isActive() {
-        return active;
+    public Date getCreationDate() {
+        return creationDate;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setCreationDate(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public void addNote (String note) {
+        this.notes.add(note);
+    }
+
+    public List<String> getNotes() {
+        return notes;
     }
 }

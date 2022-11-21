@@ -1,93 +1,137 @@
 package com.dev.controllers;
 
 import com.dev.objects.User;
+import com.dev.utils.Utils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
+import javax.xml.bind.DatatypeConverter;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
 @RestController
 public class TestController {
-    List<User> userList = new ArrayList<>();
 
+    private List<User> myUsers = new ArrayList<>();
+
+    @Autowired
+    public Utils utils;
 
     @PostConstruct
-    private void init() {
-
+    public void init () {
+    }
+    @RequestMapping(value = "/get-user", method = {RequestMethod.GET, RequestMethod.POST})
+    public List<User> getMyUsers(){
+        return this.myUsers;
     }
 
-    @RequestMapping("/get-users")
-    public List<User> getUserList(){
-        return this.userList;
+    @RequestMapping(value = "/test", method = {RequestMethod.GET, RequestMethod.POST})
+    public Object test () {
+        return new Date().toString();
     }
 
-    @RequestMapping("/add-user")
-    public boolean addUser(String first,String last){
-        User user=new User(first,last,true);
-        this.userList.add(user);
-        return true;
-
+    @RequestMapping(value = "/create-account", method = {RequestMethod.GET, RequestMethod.POST})
+    public User createAccount (String username, String password) {
+        User newAccount = null;
+        if (utils.validateUsername(username)) {
+            if (utils.validatePassword(password)) {
+                if (!checkIfUsernameExists(username)) {
+                    String token = createHash(username, password);
+                    newAccount = new User(username, token);
+                    this.myUsers.add(newAccount);
+                } else {
+                    System.out.println("username already exits");
+                }
+            } else {
+                System.out.println("password is invalid");
+            }
+        } else {
+            System.out.println("username is invalid");
+        }
+        return newAccount;
     }
+
+
+    public String createHash (String username, String password) {
+        String raw = String.format("%s_%s", username, password);
+        String myHash = null;
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(raw.getBytes());
+            byte[] digest = md.digest();
+            myHash = DatatypeConverter
+                    .printHexBinary(digest).toUpperCase();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+
+        return myHash;
+    }
+
+    private boolean checkIfUsernameExists (String username) {
+        boolean exists = false;
+        for (User user : this.myUsers) {
+            if (user.getUsername().equals(username)) {
+                exists = true;
+                break;
+            }
+        }
+
+        return exists;
+    }
+
+
+    @RequestMapping(value = "/save-note", method = {RequestMethod.GET, RequestMethod.POST})
+    public boolean saveNote (String note, String token) {
+        boolean success = false;
+        if (utils.validateNote(note)) {
+            User user = getUserByToken(token);
+            if (user != null) {
+                user.addNote(note);
+                success = true;
+            } else {
+                System.out.println("cannot find match for token " + token);
+            }
+        } else {
+            System.out.println("note text was not validated");
+        }
+        return success;
+    }
+
+    @RequestMapping(value = "/get-all-notes", method = {RequestMethod.GET, RequestMethod.POST})
+    public List<String> getAllNotes (String token) {
+        List<String> notes = null;
+        User user = getUserByToken(token);
+        if (user != null) {
+            notes = user.getNotes();
+        } else {
+            System.out.println("cannot find match for token " + token);
+        }
+
+        return notes;
+    }
+
+    private User getUserByToken (String token) {
+        User matchedUser = null;
+        if (token != null) {
+            for (User user : this.myUsers) {
+                if (user.getToken().equals(token)) {
+                    matchedUser = user;
+                    break;
+                }
+            }
+        }
+        return matchedUser;
+    }
+
 
 
 
 }
-//    public List<User> getUserList(){
-//        return this.userList;
-//    }
-//
-//    @RequestMapping("/get-all-users")
-//    public List<User> returnUser(){
-//        return this.userList;
-//    }
-//    @RequestMapping("add-user")
-//    public boolean addUser(String name,String password){
-//        boolean success=false;
-//        if (name!=null && password!=null){
-//            User u =new User(name,password);
-//            this.userList.add(u);
-//            success=true;
-//        }
-//
-//        return success;
-//    }
-//    @RequestMapping("/search")
-//    public List<User>search(String toFind){
-//        List<User> result=new ArrayList<>();
-//        if (toFind!=null){
-//            for (User u:this.userList) {
-//                if (u.getUsername().contains(toFind)){
-//                    result.add(u);
-//                }
-//            }
-//        }
-//
-//        return result;
-//    }
-//
-//
-///*
-//    @RequestMapping("get-users")
-//    public List<User> getUsers () {
-//      return this.userList;
-//    }
-//
-//    @RequestMapping("add-user")
-//    public boolean addUser (String firstName, String lastName) {
-//       User newUser=new User(firstName,lastName);
-//       this.userList.add(newUser);
-//       return true;
-//    }
-//    @RequestMapping("/echo")
-//        public String echo (String text) {
-//
-//        return text +"!";
-//    }
-//
-// */
-//
-//
-//}
