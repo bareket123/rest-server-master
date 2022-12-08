@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 
 public class User {
+    private int id;
     private String username;
     private String token;
     private Date creationDate;
@@ -47,5 +48,17 @@ public class User {
 
     public List<String> getNotes() {
         return notes;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setNotes(List<String> notes) {
+        this.notes = notes;
     }
 }

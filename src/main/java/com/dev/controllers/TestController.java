@@ -1,6 +1,10 @@
 package com.dev.controllers;
 
 import com.dev.objects.User;
+import com.dev.response.BasicResponse;
+import com.dev.response.BasicResponse;
+import com.dev.response.SignInResponse;
+import com.dev.utils.Persist;
 import com.dev.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,13 +28,20 @@ public class TestController {
     @Autowired
     public Utils utils;
 
+
+    @Autowired
+    private Persist persist;
+
     @PostConstruct
     public void init () {
     }
-    @RequestMapping(value = "/get-user", method = {RequestMethod.GET, RequestMethod.POST})
-    public List<User> getMyUsers(){
-        return this.myUsers;
+
+    @RequestMapping(value = "/get-all-users", method = {RequestMethod.GET, RequestMethod.POST})
+    public List<User> getAllUsers () {
+        List<User> allUsers = persist.getAllUsers();
+        return allUsers;
     }
+
 
     @RequestMapping(value = "/test", method = {RequestMethod.GET, RequestMethod.POST})
     public Object test () {
@@ -42,10 +53,10 @@ public class TestController {
         User newAccount = null;
         if (utils.validateUsername(username)) {
             if (utils.validatePassword(password)) {
-                if (!checkIfUsernameExists(username)) {
+                if (persist.usernameAvailable(username)) {
                     String token = createHash(username, password);
                     newAccount = new User(username, token);
-                    this.myUsers.add(newAccount);
+                    persist.addUser(username, token);
                 } else {
                     System.out.println("username already exits");
                 }
@@ -92,9 +103,9 @@ public class TestController {
     public boolean saveNote (String note, String token) {
         boolean success = false;
         if (utils.validateNote(note)) {
-            User user = getUserByToken(token);
+            User user = persist.getUserByToken(token);
             if (user != null) {
-                user.addNote(note);
+                persist.addNote(user.getId(), note);
                 success = true;
             } else {
                 System.out.println("cannot find match for token " + token);
@@ -108,9 +119,9 @@ public class TestController {
     @RequestMapping(value = "/get-all-notes", method = {RequestMethod.GET, RequestMethod.POST})
     public List<String> getAllNotes (String token) {
         List<String> notes = null;
-        User user = getUserByToken(token);
+        User user = persist.getUserByToken(token);
         if (user != null) {
-            notes = user.getNotes();
+            notes = persist.getNotesByUserId(user.getId());
         } else {
             System.out.println("cannot find match for token " + token);
         }
@@ -130,8 +141,40 @@ public class TestController {
         }
         return matchedUser;
     }
+    @RequestMapping(value = "/check", method = RequestMethod.GET)
+    public String getCheck(){
+        return "success from get";
+
+    }
+    @RequestMapping(value = "/check", method = RequestMethod.POST)
+    public String postCheck(){
+        return "success from post";
+
+    }
+
+
+    @RequestMapping(value = "/sign-in", method = RequestMethod.POST)
+    public BasicResponse signIn (String username, String password) {
+        BasicResponse basicResponse = null;
+        String token = createHash(username, password);
+        token = persist.getUserByCreds(username, token);
+        if (token == null) {
+            if (persist.usernameAvailable(username)) {
+                basicResponse = new BasicResponse(false, 1);
+            } else {
+                basicResponse = new BasicResponse(false, 2);
+            }
+        } else {
+            User user = persist.getUserByToken(token);
+            basicResponse = new SignInResponse(true, null, user);
+        }
+        return basicResponse;
+    }
+
+
 
 
 
 
 }
+
